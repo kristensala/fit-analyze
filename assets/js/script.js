@@ -16,19 +16,12 @@ function calculateSelectedAreaAvgHeartRate() {
 
 }
 
-function renderChart() {
-    let aapl = [
-        {
-            date: new Date(2011,11,11),
-            close: 123.50
-        },
-        {
-            date: new Date(2011,11,12),
-            close: 512.30
-        }
-    ]
+async function renderChart() {
+    const response = await fetch("http://localhost:5432/api/fit/test-data")
+    const aapl = await response.json()
+    console.log(aapl)
 
-    const width = 928;
+    const width = 1600;
     const height = 500;
     const marginTop = 20;
     const marginRight = 30;
@@ -36,13 +29,15 @@ function renderChart() {
     const marginLeft = 40;
 
     // Declare the x (horizontal position) scale.
-    const x = d3.scaleUtc(d3.extent(aapl, d => d.date), [marginLeft, width - marginRight]);
+    const x = d3.scaleUtc(d3.extent(aapl, d => new Date(d.timestamp)), [marginLeft, width - marginRight]);
 
     // Declare the y (vertical position) scale.
-    const y = d3.scaleLinear([0, d3.max(aapl, d => d.close)], [height - marginBottom, marginTop]);
+    const y = d3.scaleLinear([0, d3.max(aapl, d => d.heartRate)], [height - marginBottom, marginTop]);
+    const y2 = d3.scaleLinear([0, d3.max(aapl, d => d.power)], [height - marginBottom, marginTop]);
 
     // Declare the line generator.
-    const line = d3.line().x(d => x(d.date)).y(d => y(d.close));
+    const line = d3.line().x(d => x(new Date(d.timestamp))).y(d => y(d.heartRate));
+    const line2 = d3.line().x(d => x(new Date(d.timestamp))).y(d => y(d.power));
 
     // Create the SVG container.
     const svg = d3.create("svg")
@@ -60,6 +55,7 @@ function renderChart() {
     svg.append("g")
         .attr("transform", `translate(${marginLeft},0)`)
         .call(d3.axisLeft(y).ticks(height / 40))
+        .call(d3.axisLeft(y2).ticks(height / 40))
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll(".tick line").clone()
             .attr("x2", width - marginLeft - marginRight)
@@ -69,14 +65,20 @@ function renderChart() {
             .attr("y", 10)
             .attr("fill", "currentColor")
             .attr("text-anchor", "start")
-            .text("↑ Daily close ($)"));
+            .text("Workout data"));
 
     // Append a path for the line.
     svg.append("path")
         .attr("fill", "none")
         .attr("stroke", "steelblue")
         .attr("stroke-width", 1.5)
-        .attr("d", line(aapl));
+        .attr("d", line(aapl))
+
+    svg.append("path")
+        .attr("fill", "none")
+        .attr("stroke", "green")
+        .attr("stroke-width", 1)
+        .attr("d", line2(aapl))
 
     document.getElementById("container").append(svg.node());
 }

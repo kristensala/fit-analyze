@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+
+	"github.com/kristen.sala/fit-analyze/internal/fit"
 )
 
 type Session struct {
@@ -25,6 +27,13 @@ func handleServer() {
             Name: "test session",
         }
         json.NewEncoder(w).Encode(session)
+    })
+
+    http.HandleFunc("/api/fit/test-data", func(w http.ResponseWriter, r *http.Request) {
+        decoder := fit.FitParser{}
+        result := decoder.Parse()
+        json.NewEncoder(w).Encode(result)
+
     })
 
     println("Listening on http://localhost:5432")

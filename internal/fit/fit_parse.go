@@ -2,9 +2,9 @@ package fit
 
 import (
 	"bytes"
-	"fmt"
-    "os"
+	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/tormoder/fit"
 )
@@ -13,34 +13,45 @@ type FitParser struct {
     FilePath string
 }
 
-func (fp *FitParser) Parse() {
+type Record struct {
+    TimeStamp time.Time `json:"timestamp"`
+    Distance uint32 `json:"distance"`
+    Power uint16 `json:"power"`
+    HeartRate uint8 `json:"heartRate"`
+}
+
+func (fp *FitParser) Parse() []Record {
     file := filepath.Join("data", "tmp", "test.fit")
     fileData, err := os.ReadFile(file)
     if err != nil {
         println(err.Error())
-        return
+        return nil
     }
 
     fit, err := fit.Decode(bytes.NewReader(fileData))
     if err != nil {
         println(err.Error())
-        return
+        return nil
     }
 
     activity, err := fit.Activity()
     if err != nil {
         println(err.Error())
-        return
+        return nil
     }
 
+    var result []Record
     for _, record := range activity.Records {
-        row := fmt.Sprintf("%s, %d m, %d W, %d bpm",
-            record.Timestamp.Format("2006-01-02 15:04:05"),
-            record.Distance,
-            record.Power,
-            record.HeartRate)
+        result = append(result, Record{
+            TimeStamp: record.Timestamp,
+            Distance: record.Distance,
+            Power: record.Power,
+            HeartRate: record.HeartRate,
+        })
 
-        println(row)
+
     }
+
+    return result
 }
 
