@@ -31,11 +31,19 @@ func handleServer() {
 
     http.HandleFunc("/api/fit/test-data", func(w http.ResponseWriter, r *http.Request) {
         decoder := fit.FitParser{}
-        result := decoder.Parse()
+        result, err := decoder.Parse()
+        
+        if err != nil {
+            println(err.Error())
+            //todo: log
+            http.Error(w, http.StatusText(http.StatusInternalServerError),
+                http.StatusInternalServerError)
+        }
+        
         json.NewEncoder(w).Encode(result)
-
     })
 
     println("Listening on http://localhost:5432")
     http.ListenAndServe(":5432", nil)
 }
+

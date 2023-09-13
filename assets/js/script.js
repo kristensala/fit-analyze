@@ -1,3 +1,29 @@
+async function loadMap(){
+    const response = await fetch("http://localhost:5432/api/fit/test-data")
+    const data = await response.json()
+    console.log(data)
+
+    const coords = data.filter(function(item) {
+        if (item.latitude !== 0 || item.longitude !== 0) {
+            return true;
+        }
+        return false;
+    }).map(function(item) {
+        return [item.latitude, item.longitude]
+    });
+
+    console.log(coords);
+
+    var map = L.map('map');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var polyline = L.polyline(coords, {color: "blue"}).addTo(map);
+    map.fitBounds(polyline.getBounds());
+}
+
 async function decodeFitFile() {
     const response = await fetch("http://localhost:5432/api/fit/decode")
     const data = await response.json()
@@ -6,14 +32,6 @@ async function decodeFitFile() {
     if (data !== null) {
 
     }
-}
-
-function calculateSelectedAreaAvgPower() {
-
-}
-
-function calculateSelectedAreaAvgHeartRate() {
-
 }
 
 async function renderChart() {
@@ -41,10 +59,10 @@ async function renderChart() {
 
     // Create the SVG container.
     const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", [0, 0, width, height])
-    .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [0, 0, width, height])
+        .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
     // Add the x-axis.
     svg.append("g")
@@ -81,5 +99,7 @@ async function renderChart() {
         .attr("d", line2(aapl))
 
     document.getElementById("container").append(svg.node());
+
+    loadMap();
 }
 
