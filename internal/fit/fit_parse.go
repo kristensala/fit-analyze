@@ -10,7 +10,7 @@ import (
 )
 
 type FitParser struct {
-    File []byte
+    FilePath string
 }
 
 func (fp *FitParser) Parse() {
