@@ -10,9 +10,7 @@ import (
 	"github.com/tormoder/fit"
 )
 
-type FitParser struct {
-    FilePath string
-}
+type FitParser struct {}
 
 type Record struct {
     TimeStamp time.Time `json:"timestamp"`
@@ -23,31 +21,59 @@ type Record struct {
     Longitude float64 `json:"longitude"`
 }
 
-func (fp *FitParser) Parse() ([]Record, error) {
+type FitSummary struct {
+    AvgHeartRate uint8 `json:"avgHeartRate"`
+    AvgPower uint16 `json:"avgPower"`
+    NormalizedPower uint16 `json:"normalizedPower"`
+    AvgCadence uint8 `json:"avgCadence"`
+    TotalTime uint32 `json:"totalTime"`
+    TotalMovingTime uint32 `json:"totalMovingTime"`
+    Distance uint32 `json:"distance"`
+}
+
+type Session struct {
+    Records []Record `json:"records"`
+    Summary FitSummary `json:"summary"`
+}
+
+func (fp *FitParser) Parse() (Session, error) {
     file := filepath.Join("data", "tmp", "test.fit")
     fileData, err := os.ReadFile(file)
     if err != nil {
         println(err.Error())
-        return nil, err
+        return Session{}, err
     }
 
     fit, err := fit.Decode(bytes.NewReader(fileData))
     if err != nil {
         println(err.Error())
-        return nil, err
+        return Session{}, err
     }
 
     activity, err := fit.Activity()
     if err != nil {
         println(err.Error())
-        return nil, err
+        return Session{}, err
     }
 
-    var result []Record
+    // Why is this a list??
+    session := activity.Sessions[0]
+    summary := FitSummary{
+        AvgHeartRate: session.AvgHeartRate,
+        AvgPower: session.AvgPower,
+        NormalizedPower: session.NormalizedPower,
+        AvgCadence: session.AvgCadence,
+        TotalTime: session.TotalElapsedTime,
+        TotalMovingTime: session.TotalMovingTime,
+        Distance: session.TotalDistance,
+    }
+
+    var records []Record
     for _, record := range activity.Records {
         lat, _ := strconv.ParseFloat(record.PositionLat.String(), 64)
         long, _ := strconv.ParseFloat(record.PositionLong.String(), 64)
-        result = append(result, Record{
+
+        records = append(records, Record{
             TimeStamp: record.Timestamp,
             Distance: record.Distance,
             Power: record.Power,
@@ -57,6 +83,11 @@ func (fp *FitParser) Parse() ([]Record, error) {
         })
     }
 
-    return result, nil
+    res := Session{
+        Summary: summary,
+        Records: records,
+    }
+
+    return res, nil
 }
 

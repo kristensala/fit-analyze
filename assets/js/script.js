@@ -1,44 +1,15 @@
-async function loadMap(){
+async function renderView() {
     const response = await fetch("http://localhost:5432/api/fit/test-data")
     const data = await response.json()
+
     console.log(data)
+    const records = data.records
 
-    const coords = data.filter(function(item) {
-        if (item.latitude !== 0 || item.longitude !== 0) {
-            return true;
-        }
-        return false;
-    }).map(function(item) {
-        return [item.latitude, item.longitude]
-    });
-
-    console.log(coords);
-
-    var map = L.map('map');
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    var polyline = L.polyline(coords, {color: "blue"}).addTo(map);
-    map.fitBounds(polyline.getBounds());
+    renderChart(records)
+    renderMap(records)
 }
 
-async function decodeFitFile() {
-    const response = await fetch("http://localhost:5432/api/fit/decode")
-    const data = await response.json()
-    console.log(data)
-
-    if (data !== null) {
-
-    }
-}
-
-async function renderChart() {
-    const response = await fetch("http://localhost:5432/api/fit/test-data")
-    const aapl = await response.json()
-    console.log(aapl)
-
+function renderChart(records) {
     const width = 1600;
     const height = 500;
     const marginTop = 20;
@@ -47,11 +18,11 @@ async function renderChart() {
     const marginLeft = 40;
 
     // Declare the x (horizontal position) scale.
-    const x = d3.scaleUtc(d3.extent(aapl, d => new Date(d.timestamp)), [marginLeft, width - marginRight]);
+    const x = d3.scaleUtc(d3.extent(records, d => new Date(d.timestamp)), [marginLeft, width - marginRight]);
 
     // Declare the y (vertical position) scale.
-    const y = d3.scaleLinear([0, d3.max(aapl, d => d.heartRate)], [height - marginBottom, marginTop]);
-    const y2 = d3.scaleLinear([0, d3.max(aapl, d => d.power)], [height - marginBottom, marginTop]);
+    const y = d3.scaleLinear([0, d3.max(records, d => d.heartRate)], [height - marginBottom, marginTop]);
+    const y2 = d3.scaleLinear([0, d3.max(records, d => d.power)], [height - marginBottom, marginTop]);
 
     // Declare the line generator.
     const line = d3.line().x(d => x(new Date(d.timestamp))).y(d => y(d.heartRate));
@@ -90,16 +61,39 @@ async function renderChart() {
         .attr("fill", "none")
         .attr("stroke", "steelblue")
         .attr("stroke-width", 1.5)
-        .attr("d", line(aapl))
+        .attr("d", line(records))
 
     svg.append("path")
         .attr("fill", "none")
         .attr("stroke", "green")
         .attr("stroke-width", 1)
-        .attr("d", line2(aapl))
+        .attr("d", line2(records))
 
     document.getElementById("container").append(svg.node());
-
-    loadMap();
 }
 
+function renderMap(records) {
+    const coords = records.filter(function(item) {
+        if (item.latitude !== 0 || item.longitude !== 0) {
+            return true;
+        }
+        return false;
+    }).map(function(item) {
+        return [item.latitude, item.longitude]
+    });
+
+    console.log(coords);
+
+    var map = L.map('map');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var polyline = L.polyline(coords, {color: "blue"}).addTo(map);
+    map.fitBounds(polyline.getBounds());
+}
+
+function renderSummary(summary) {
+
+}
