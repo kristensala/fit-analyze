@@ -13,10 +13,16 @@
         crossorigin=""></script>
     </head>
     <body>
-        <button onclick="renderView()">render</button>
-        <div id="map"></div>
-        <div id="container"></div>
-        <div id="summary"></div>
+        <div class="header">
+            <input id="fitFile" type="file" name="fitFile"/>
+            <button onclick="renderView()">upload</button>
+        </div>
+
+        <div class="content">
+            <div id="map"></div>
+            <div id="container"></div>
+            <div id="summary"></div>
+        </div>
     </body>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="static/js/script.js"></script>

@@ -1,7 +1,15 @@
 async function renderView() {
-    const response = await fetch("http://localhost:5432/api/fit/test-data")
-    const data = await response.json()
+    const fitFile = document.getElementById("fitFile")
 
+    let formData = new FormData();
+    formData.append("fitFile", fitFile.files[0])
+
+    const data = await fetch("http://localhost:5432/api/fit/upload", {
+        method: "POST",
+        body: formData
+    }).then(async function(response) {
+        return await response.json()
+    });
     console.log(data)
     const records = data.records
 
@@ -94,6 +102,11 @@ function renderMap(records) {
     map.fitBounds(polyline.getBounds());
 }
 
-function renderSummary(summary) {
 
+async function renderSummary() {
+    //TODO: send post request and send summary data
+    const response = await fetch("http://localhost:5432/api/template/summary")
+    const data = await response.text()
+
+    document.getElementById("summary").innerHTML = data
 }

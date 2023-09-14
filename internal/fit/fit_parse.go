@@ -10,7 +10,9 @@ import (
 	"github.com/tormoder/fit"
 )
 
-type FitParser struct {}
+type FitParser struct {
+    TmpFile os.File
+}
 
 type Record struct {
     TimeStamp time.Time `json:"timestamp"`
@@ -37,7 +39,10 @@ type Session struct {
 }
 
 func (fp *FitParser) Parse() (Session, error) {
-    file := filepath.Join("data", "tmp", "test.fit")
+    //file := filepath.Join("data", "tmp", "test.fit")
+    println("path", fp.TmpFile.Name())
+
+    file := filepath.Join("", "", fp.TmpFile.Name())
     fileData, err := os.ReadFile(file)
     if err != nil {
         println(err.Error())

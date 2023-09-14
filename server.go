@@ -2,14 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/kristen.sala/fit-analyze/internal/fit"
 )
 
-type Session struct {
-    Name string `json:"name"`
+type Data struct {
+     AvgPower int `json:"name"`
 }
 
 func handleServer() {
@@ -21,21 +24,53 @@ func handleServer() {
         tmpl.Execute(w, nil)
     })
 
-    //htmx make a post request and send .fit file
-    http.HandleFunc("/api/fit/decode", func(w http.ResponseWriter, r *http.Request) {
-        session := Session{
-            Name: "test session",
+    tmplSummary := template.Must(template.ParseFiles("./templates/summary.html"))
+    http.HandleFunc("/api/template/summary", func(w http.ResponseWriter, r *http.Request) {
+        data := Data{
+            AvgPower: 123,
         }
-        json.NewEncoder(w).Encode(session)
+        tmplSummary.Execute(w, data)
     })
 
-    http.HandleFunc("/api/fit/test-data", func(w http.ResponseWriter, r *http.Request) {
-        decoder := fit.FitParser{}
-        result, err := decoder.Parse()
-        
+    http.HandleFunc("/api/fit/upload", func(w http.ResponseWriter, r *http.Request) {
+        file, handler, err := r.FormFile("fitFile")
         if err != nil {
-            println(err.Error())
-            //todo: log
+            fmt.Println(err)
+            return
+        }
+
+        defer file.Close()
+        println(handler.Filename)
+
+        tempFile, err := os.CreateTemp("./data/tmp/", "upload-*.fit")
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+
+        defer tempFile.Close()
+
+        fileBytes, err := io.ReadAll(file)
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+
+        tempFile.Write(fileBytes)
+
+        if err = tempFile.Close(); err != nil {
+            fmt.Println(err)
+            return
+        }
+
+        decoder := fit.FitParser{
+            TmpFile: *tempFile,
+        }
+
+        result, err := decoder.Parse()
+        if err != nil {
+            fmt.Println(err)
+
             http.Error(w, http.StatusText(http.StatusInternalServerError),
                 http.StatusInternalServerError)
         }
