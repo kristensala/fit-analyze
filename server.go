@@ -15,7 +15,7 @@ type Data struct {
      AvgPower int `json:"name"`
 }
 
-func handleServer() {
+func initServer() {
     fs := http.FileServer(http.Dir("./assets/"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -33,38 +33,14 @@ func handleServer() {
     })
 
     http.HandleFunc("/api/fit/upload", func(w http.ResponseWriter, r *http.Request) {
-        file, handler, err := r.FormFile("fitFile")
+        tempFile, err := handleFileUpload(r)
         if err != nil {
-            fmt.Println(err)
-            return
-        }
-
-        defer file.Close()
-        println(handler.Filename)
-
-        tempFile, err := os.CreateTemp("./data/tmp/", "upload-*.fit")
-        if err != nil {
-            fmt.Println(err)
-            return
-        }
-
-        defer tempFile.Close()
-
-        fileBytes, err := io.ReadAll(file)
-        if err != nil {
-            fmt.Println(err)
-            return
-        }
-
-        tempFile.Write(fileBytes)
-
-        if err = tempFile.Close(); err != nil {
-            fmt.Println(err)
-            return
+            http.Error(w, http.StatusText(http.StatusInternalServerError),
+                http.StatusInternalServerError)
         }
 
         decoder := fit.FitParser{
-            TmpFile: *tempFile,
+            TmpFile: tempFile,
         }
 
         result, err := decoder.Parse()
@@ -80,5 +56,39 @@ func handleServer() {
 
     println("Listening on http://localhost:5432")
     http.ListenAndServe(":5432", nil)
+}
+
+func handleFileUpload(r *http.Request) (os.File, error) {
+    file, handler, err := r.FormFile("fitFile")
+    if err != nil {
+        fmt.Println(err)
+        return os.File{}, err
+    }
+
+    defer file.Close()
+    println(handler.Filename)
+
+    tempFile, err := os.CreateTemp("./data/tmp/", "upload-*.fit")
+    if err != nil {
+        fmt.Println(err)
+        return os.File{}, err
+    }
+
+    defer tempFile.Close()
+
+    fileBytes, err := io.ReadAll(file)
+    if err != nil {
+        fmt.Println(err)
+        return os.File{}, err
+    }
+
+    tempFile.Write(fileBytes)
+
+    if err = tempFile.Close(); err != nil {
+        fmt.Println(err)
+        return os.File{}, err
+    }
+
+    return *tempFile, nil
 }
 
