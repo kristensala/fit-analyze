@@ -33,14 +33,14 @@ func initServer() {
     })
 
     http.HandleFunc("/api/fit/upload", func(w http.ResponseWriter, r *http.Request) {
-        tempFile, err := handleFileUpload(r)
+        /*tempFile, err := handleFileUpload(r)
         if err != nil {
             http.Error(w, http.StatusText(http.StatusInternalServerError),
                 http.StatusInternalServerError)
-        }
+}*/
 
         decoder := fit.FitParser{
-            TmpFile: tempFile,
+            //TmpFile: tempFile,
         }
 
         result, err := decoder.Parse()

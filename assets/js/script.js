@@ -42,6 +42,35 @@ function renderChart2(records) {
         .attr("viewBox", [0, 0, width, height])
         .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
+    const brush = d3.brushX()
+    .extent([[marginLeft, marginTop], [width - marginRight, height - marginBottom]])
+    .on("start brush end", brushed);
+
+    svg.append("g")
+        .call(brush)
+        .call(brush.move, [3, 5].map(x))
+        .on("dblclick", dblclicked);
+
+    function dblclicked() {
+        const selection = d3.brushSelection(this) ? null : x.range();
+        d3.select(this).call(brush.move, selection);
+    }
+
+    // TODO: how to detect that selection is ended so I can make an api call; On mouse up event maybe???
+    // https://d3js.org/d3-brush#brush_on
+    function brushed({selection}) {
+        if (selection === null) {
+            console.log("no selection")
+        } else {
+            const [x0, x1] = selection.map(x.invert);
+            console.log("x0", x0)
+            console.log("x1", x1)
+
+            //todo: send api request to calculate range data
+            var t = GetRecordsRange(records, x0, x1);
+            console.log("range", t);
+        }
+    }
     // Add the x-axis.
     svg.append("g")
         .attr("transform", `translate(0,${height - marginBottom})`)
@@ -103,4 +132,17 @@ async function renderSummary() {
     const data = await response.text()
 
     document.getElementById("summary").innerHTML = data
+}
+
+function GetRecordsRange(records, start, end) {
+    var filteredRecords = records.filter(function(item) {
+        if (new Date(item.timestamp) >= start && new Date(item.timestamp) <= end) {
+            return true;
+        }
+        return false;
+    }).map(function(record) {
+            return record;
+    });
+
+    return filteredRecords;
 }
