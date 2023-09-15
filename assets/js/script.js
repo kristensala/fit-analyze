@@ -10,29 +10,28 @@ async function renderView() {
     }).then(async function(response) {
         return await response.json()
     });
+
     console.log(data)
     const records = data.records
 
-    renderChart(records)
+    renderChart2(records)
     renderMap(records)
 }
 
-function renderChart(records) {
-    const width = 1600;
+function renderChart2(records) {
+    const width = 1200;
     const height = 500;
     const marginTop = 20;
-    const marginRight = 30;
+    const marginRight = 20;
     const marginBottom = 30;
-    const marginLeft = 40;
+    const marginLeft = 30;
 
-    // Declare the x (horizontal position) scale.
-    const x = d3.scaleUtc(d3.extent(records, d => new Date(d.timestamp)), [marginLeft, width - marginRight]);
+    const x = d3.scaleUtc()
+    .domain(d3.extent(records, d => new Date(d.timestamp)))
+    .range([marginLeft, width - marginRight])
 
-    // Declare the y (vertical position) scale.
-    const y = d3.scaleLinear([0, d3.max(records, d => d.heartRate)], [height - marginBottom, marginTop]);
-    const y2 = d3.scaleLinear([0, d3.max(records, d => d.power)], [height - marginBottom, marginTop]);
+    const y = d3.scaleLinear([0, d3.max(records, d => d.power)], [height - marginBottom, marginTop])
 
-    // Declare the line generator.
     const line = d3.line().x(d => x(new Date(d.timestamp))).y(d => y(d.heartRate));
     const line2 = d3.line().x(d => x(new Date(d.timestamp))).y(d => y(d.power));
 
@@ -52,7 +51,7 @@ function renderChart(records) {
     svg.append("g")
         .attr("transform", `translate(${marginLeft},0)`)
         .call(d3.axisLeft(y).ticks(height / 40))
-        .call(d3.axisLeft(y2).ticks(height / 40))
+        //.call(d3.axisLeft(y).ticks(height / 40))
         .call(g => g.select(".domain").remove())
         .call(g => g.selectAll(".tick line").clone()
             .attr("x2", width - marginLeft - marginRight)
@@ -81,12 +80,7 @@ function renderChart(records) {
 }
 
 function renderMap(records) {
-    const coords = records.filter(function(item) {
-        if (item.latitude !== 0 || item.longitude !== 0) {
-            return true;
-        }
-        return false;
-    }).map(function(item) {
+    const coords = records.map(function(item) {
         return [item.latitude, item.longitude]
     });
 

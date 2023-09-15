@@ -78,6 +78,10 @@ func (fp *FitParser) Parse() (Session, error) {
         lat, _ := strconv.ParseFloat(record.PositionLat.String(), 64)
         long, _ := strconv.ParseFloat(record.PositionLong.String(), 64)
 
+        if lat == 0 || long == 0 {
+            continue
+        }
+
         records = append(records, Record{
             TimeStamp: record.Timestamp,
             Distance: record.Distance,
