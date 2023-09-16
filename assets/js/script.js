@@ -92,15 +92,16 @@ async function renderChart2(records) {
     // Append a path for the line.
     svg.append("path")
         .attr("fill", "none")
+        .attr("stroke", "green")
+        .attr("stroke-width", 0.5)
+        .attr("d", line2(records))
+
+    svg.append("path")
+        .attr("fill", "none")
         .attr("stroke", "steelblue")
         .attr("stroke-width", 1.5)
         .attr("d", line(records))
 
-    svg.append("path")
-        .attr("fill", "none")
-        .attr("stroke", "green")
-        .attr("stroke-width", 0.5)
-        .attr("d", line2(records))
 
     document.getElementById("container").append(svg.node());
 }
