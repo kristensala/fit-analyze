@@ -8,14 +8,11 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kristen.sala/fit-analyze/handler"
 	"github.com/kristen.sala/fit-analyze/internal/fit"
 )
 
-type Data struct {
-     AvgPower int `json:"name"`
-}
-
-func initServer() {
+func initServer(summaryHandler handler.SummaryHandler) {
     fs := http.FileServer(http.Dir("./assets/"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -26,10 +23,12 @@ func initServer() {
 
     tmplSummary := template.Must(template.ParseFiles("./templates/summary.html"))
     http.HandleFunc("/api/template/summary", func(w http.ResponseWriter, r *http.Request) {
-        data := Data{
-            AvgPower: 123,
+        if r.Method != http.MethodPost {
+            http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
         }
-        tmplSummary.Execute(w, data)
+        summaryHandler.HandleSummaryRequest(r)
+
+        tmplSummary.Execute(w, nil)
     })
 
     http.HandleFunc("/api/fit/upload", func(w http.ResponseWriter, r *http.Request) {

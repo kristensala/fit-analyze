@@ -1,3 +1,6 @@
+const controller = new  AbortController();
+const signal = controller.signal;
+
 async function renderView() {
     const fitFile = document.getElementById("fitFile")
 
@@ -37,18 +40,17 @@ function renderChart2(records) {
 
     // Create the SVG container.
     const svg = d3.create("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("viewBox", [0, 0, width, height])
-        .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [0, 0, width, height])
+    .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
     const brush = d3.brushX()
     .extent([[marginLeft, marginTop], [width - marginRight, height - marginBottom]])
-    .on("start brush end", brushed);
+    .on("end", brushed);
 
     svg.append("g")
         .call(brush)
-        .call(brush.move, [3, 5].map(x))
         .on("dblclick", dblclicked);
 
     function dblclicked() {
@@ -56,19 +58,12 @@ function renderChart2(records) {
         d3.select(this).call(brush.move, selection);
     }
 
-    // TODO: how to detect that selection is ended so I can make an api call; On mouse up event maybe???
-    // https://d3js.org/d3-brush#brush_on
     function brushed({selection}) {
         if (selection === null) {
             console.log("no selection")
         } else {
             const [x0, x1] = selection.map(x.invert);
-            console.log("x0", x0)
-            console.log("x1", x1)
-
-            //todo: send api request to calculate range data
-            var t = GetRecordsRange(records, x0, x1);
-            console.log("range", t);
+            filterRecords(records, x0, x1);
         }
     }
     // Add the x-axis.
@@ -127,14 +122,15 @@ function renderMap(records) {
 
 
 async function renderSummary() {
-    //TODO: send post request and send summary data
+    //TODO: send post request and send summary data and return summary html template
     const response = await fetch("http://localhost:5432/api/template/summary")
     const data = await response.text()
 
     document.getElementById("summary").innerHTML = data
 }
 
-function GetRecordsRange(records, start, end) {
+//TODO:
+function filterRecords(records, start, end) {
     var filteredRecords = records.filter(function(item) {
         if (new Date(item.timestamp) >= start && new Date(item.timestamp) <= end) {
             return true;
@@ -144,5 +140,14 @@ function GetRecordsRange(records, start, end) {
             return record;
     });
 
-    return filteredRecords;
+    const jason = filteredRecords.map(item => JSON.stringify(item))
+
+    fetch("http://localhost:5432/api/template/summary", {
+        method: "POST",
+        body: "{\"records\":[" + jason + "]}"
+    }).then(function(res) {
+        console.log("response", res);
+    }).catch(function(err) {
+        console.error(err);
+    });
 }
