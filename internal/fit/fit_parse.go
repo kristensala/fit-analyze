@@ -39,7 +39,7 @@ type Session struct {
 }
 
 func (fp *FitParser) Parse() (Session, error) {
-    file := filepath.Join("data", "tmp", "test.fit") //use this for testing
+    file := filepath.Join("data", "tmp", "test1.fit") //use this for testing
 
 //    file := filepath.Join("", "", fp.TmpFile.Name())
     fileData, err := os.ReadFile(file)
@@ -99,6 +99,3 @@ func (fp *FitParser) Parse() (Session, error) {
     return res, nil
 }
 
-func (fp *FitParser) GetSelectedRecordsSummary([]Record) {
-
-}

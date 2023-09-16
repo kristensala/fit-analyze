@@ -17,11 +17,11 @@ async function renderView() {
     console.log(data)
     const records = data.records
 
-    renderChart2(records)
+    await renderChart2(records)
     renderMap(records)
 }
 
-function renderChart2(records) {
+async function renderChart2(records) {
     const width = 1200;
     const height = 500;
     const marginTop = 20;
@@ -47,7 +47,7 @@ function renderChart2(records) {
 
     const brush = d3.brushX()
     .extent([[marginLeft, marginTop], [width - marginRight, height - marginBottom]])
-    .on("end", brushed);
+    .on("end", await brushed);
 
     svg.append("g")
         .call(brush)
@@ -58,14 +58,16 @@ function renderChart2(records) {
         d3.select(this).call(brush.move, selection);
     }
 
-    function brushed({selection}) {
+    async function brushed({selection}) {
         if (selection === null) {
             console.log("no selection")
+            //TODO: clear selection summary div
         } else {
             const [x0, x1] = selection.map(x.invert);
-            filterRecords(records, x0, x1);
+            await filterRecords(records, x0, x1);
         }
     }
+
     // Add the x-axis.
     svg.append("g")
         .attr("transform", `translate(0,${height - marginBottom})`)
@@ -97,7 +99,7 @@ function renderChart2(records) {
     svg.append("path")
         .attr("fill", "none")
         .attr("stroke", "green")
-        .attr("stroke-width", 1)
+        .attr("stroke-width", 0.5)
         .attr("d", line2(records))
 
     document.getElementById("container").append(svg.node());
@@ -107,8 +109,6 @@ function renderMap(records) {
     const coords = records.map(function(item) {
         return [item.latitude, item.longitude]
     });
-
-    console.log(coords);
 
     var map = L.map('map');
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -129,8 +129,7 @@ async function renderSummary() {
     document.getElementById("summary").innerHTML = data
 }
 
-//TODO:
-function filterRecords(records, start, end) {
+async function filterRecords(records, start, end) {
     var filteredRecords = records.filter(function(item) {
         if (new Date(item.timestamp) >= start && new Date(item.timestamp) <= end) {
             return true;
@@ -141,13 +140,11 @@ function filterRecords(records, start, end) {
     });
 
     const jason = filteredRecords.map(item => JSON.stringify(item))
-
-    fetch("http://localhost:5432/api/template/summary", {
+    const response = await fetch("http://localhost:5432/api/template/summary", {
         method: "POST",
         body: "{\"records\":[" + jason + "]}"
-    }).then(function(res) {
-        console.log("response", res);
-    }).catch(function(err) {
-        console.error(err);
     });
+    const data = await response.text()
+
+    document.getElementById("summary").innerHTML = data
 }

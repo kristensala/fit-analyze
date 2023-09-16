@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -26,9 +27,13 @@ func initServer(summaryHandler handler.SummaryHandler) {
         if r.Method != http.MethodPost {
             http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
         }
-        summaryHandler.HandleSummaryRequest(r)
+        response, err := summaryHandler.HandleSummaryRequest(r)
+        if err != nil {
+            http.Error(w, http.StatusText(http.StatusInternalServerError),
+                http.StatusInternalServerError)
+        }
 
-        tmplSummary.Execute(w, nil)
+        tmplSummary.Execute(w, response)
     })
 
     http.HandleFunc("/api/fit/upload", func(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +49,7 @@ func initServer(summaryHandler handler.SummaryHandler) {
 
         result, err := decoder.Parse()
         if err != nil {
-            fmt.Println(err)
+            log.Fatal(err)
 
             http.Error(w, http.StatusText(http.StatusInternalServerError),
                 http.StatusInternalServerError)
